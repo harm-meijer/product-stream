@@ -22,8 +22,8 @@ function createCtpClient({
       host: authUrl,
       projectKey,
       //@note: No need to provide scopes
-      //  minimal scope needed is view_products
-      // scopes: [`view_products:${projectKey}`],
+      //  minimal scope needed is view_published_products
+      scopes: [`view_published_products:${projectKey}`],
       credentials: {
         clientId,
         clientSecret,

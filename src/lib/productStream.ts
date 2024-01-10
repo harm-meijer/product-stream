@@ -1,6 +1,6 @@
 import { getApiRoot } from "./client";
 import { PassThrough } from "stream";
-import { Product } from "@commercetools/platform-sdk";
+import { ProductProjection } from "@commercetools/platform-sdk";
 import { later } from "./lib";
 //@ts-ignore
 export default () => {
@@ -8,16 +8,17 @@ export default () => {
     objectMode: true,
     highWaterMark: 200,
   });
-  recur(
+  fetchAll(
     productStream,
     //fetching products modified in the last hour
-    new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  );
+    new Date(Date.now() - 100000 * 60 * 60 * 1000).toISOString(),
+    new Date().toISOString()
+  ).catch((e) => console.log("error:", e));
 
   return productStream;
 };
 type WriteProductsArg = {
-  results: Product[];
+  results: ProductProjection[];
   productStream: PassThrough;
 };
 type WriteProducts = (arg: WriteProductsArg) => Promise<void>;
@@ -41,42 +42,72 @@ const writeProducts: WriteProducts = async ({ results, productStream }) => {
     });
   }
 };
-
-const recur = async (
+async function fetchAll(
   productStream: PassThrough,
-  lastModifiedAt?: string,
-  lastId?: string
-) => {
-  try {
-    //@note: if you only want published changes you can add 2 items to the where
-    //  array, the lastModifiedAt and "masterData(published=true)"
-    const where: string[] = lastModifiedAt
-      ? [`lastModifiedAt > "${lastModifiedAt}"`]
-      : [];
-    if (lastId) {
-      where.push(`id > "${lastId}"`);
+  lastModifiedAtFrom: string,
+  lastModifiedAtTo: string
+) {
+  const limit = 20;
+  const { get, set } = (function () {
+    const processed = new Map<string, boolean>();
+    const ids = new Array(4 * limit);
+    const set = (id: string) => {
+      processed.set(id, true);
+      ids.push(id);
+    };
+    //@note: if large amount of products are processed then
+    //  do not let the processed map get too large, only store
+    //  last 4 sets
+    if (ids.length >= 4 * limit) {
+      const remove = ids.splice(0, 2 * limit);
+      remove.forEach((id) => processed.delete(id));
     }
-    const response = await getApiRoot()
-      .products()
-      .get({
-        queryArgs: {
-          sort: "id asc",
-          limit: 20,
-          where,
-        },
-      })
-      .execute();
-    const results = response.body.results;
-    await writeProducts({
-      results: results,
-      productStream,
-    });
-    if (results.length === 0) {
-      productStream.end();
-      return;
+    const get = (id: string) => processed.get(id);
+    return { get, set };
+  })();
+  const recur = async (
+    productStream: PassThrough,
+    lastModifiedAtFrom: string,
+    lastModifiedAtTo: string
+  ) => {
+    try {
+      //@note: if you only want published changes you can add 2 items to the where
+      //  array, the lastModifiedAt and "masterData(published=true)"
+      const filter = `lastModifiedAt:range ("${lastModifiedAtFrom}" to "${lastModifiedAtTo}")`;
+
+      const response = await getApiRoot()
+        .productProjections()
+        .search()
+        .get({
+          queryArgs: {
+            sort: ["lastModifiedAt asc", "id asc"],
+            limit,
+            expand: "categories[*].ancestors[*]",
+            "filter.query": filter,
+          },
+        })
+        .execute();
+      const results = response.body.results.filter((product) => {
+        const already = get(product.id);
+        set(product.id);
+        return !already;
+      });
+      await writeProducts({
+        results: results,
+        productStream,
+      });
+      if (results.length === 0) {
+        productStream.end();
+        return;
+      }
+      recur(
+        productStream,
+        results.slice(-1)[0].lastModifiedAt,
+        lastModifiedAtTo
+      );
+    } catch (e: unknown) {
+      productStream.write(["FAIL", (e as Error).message]);
     }
-    recur(productStream, lastModifiedAt, results.slice(-1)[0].id);
-  } catch (e: unknown) {
-    productStream.write(["FAIL", (e as Error).message]);
-  }
-};
+  };
+  return recur(productStream, lastModifiedAtFrom, lastModifiedAtTo);
+}
