@@ -12,7 +12,7 @@ export default () => {
     productStream,
     //fetching products modified in the last hour
     new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  );
+  ).finally(() => productStream.end());
 
   return productStream;
 };
@@ -46,7 +46,7 @@ const recur = async (
   productStream: PassThrough,
   lastModifiedAt?: string,
   lastId?: string
-) => {
+): Promise<undefined> => {
   try {
     //@note: if you only want published changes you can add 2 items to the where
     //  array, the lastModifiedAt and "masterData(published=true)"
@@ -75,7 +75,7 @@ const recur = async (
       productStream.end();
       return;
     }
-    recur(productStream, lastModifiedAt, results.slice(-1)[0].id);
+    return recur(productStream, lastModifiedAt, results.slice(-1)[0].id);
   } catch (e: unknown) {
     productStream.write(["FAIL", (e as Error).message]);
   }
