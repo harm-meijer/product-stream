@@ -11,7 +11,7 @@ export default () => {
   fetchAll(
     productStream,
     //fetching products modified in the last hour
-    new Date(Date.now() - 100000 * 60 * 60 * 1000).toISOString(),
+    new Date(Date.now() - 60 * 60 * 1000).toISOString(),
     new Date().toISOString()
   ).catch((e) => console.log("error:", e));
 
