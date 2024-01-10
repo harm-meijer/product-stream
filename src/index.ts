@@ -43,6 +43,7 @@ const main = async () => {
   processStream.on("close", () => {
     if (errors.length) {
       console.error("errors:", errors.length);
+      console.log("errors:", errors);
     }
     console.log("stream closed", counter);
   });

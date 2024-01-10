@@ -11,9 +11,9 @@ export default () => {
   fetchAll(
     productStream,
     //fetching products modified in the last hour
-    new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    new Date(Date.now() - 100000 * 60 * 60 * 1000).toISOString(),
     new Date().toISOString()
-  ).catch((e) => console.log("error:", e));
+  ).finally(() => productStream.end());
 
   return productStream;
 };
@@ -69,7 +69,7 @@ async function fetchAll(
     productStream: PassThrough,
     lastModifiedAtFrom: string,
     lastModifiedAtTo: string
-  ) => {
+  ): Promise<unknown> => {
     try {
       //@note: if you only want published changes you can add 2 items to the where
       //  array, the lastModifiedAt and "masterData(published=true)"
@@ -100,7 +100,7 @@ async function fetchAll(
         productStream.end();
         return;
       }
-      recur(
+      return recur(
         productStream,
         results.slice(-1)[0].lastModifiedAt,
         lastModifiedAtTo
