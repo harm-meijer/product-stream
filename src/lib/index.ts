@@ -1,4 +1,7 @@
-import { COCO_CONCURRENT, COCO_RATE_PERIOD } from "../constants";
+import { FILE_WRITE_CONCURRENT, FILE_WRITE_PERIOD } from "../constants";
 import createRateLimit from "./createRateLimit";
 
-export const limitCoCo = createRateLimit(COCO_CONCURRENT, COCO_RATE_PERIOD);
+export const limitFileWrite = createRateLimit(
+  FILE_WRITE_CONCURRENT,
+  FILE_WRITE_PERIOD
+);

@@ -5,7 +5,6 @@ import { Product } from "@commercetools/platform-sdk";
 
 function limited(product: Product) {
   if (active.getSnapshot() > CONCURRENTLY_ACTIVE) {
-    console.log("returning a promise ...", active.getSnapshot());
     return new Promise<Product>((resolve) => {
       const cleanup = active.subscribe(() => {
         resolve(product);
@@ -26,15 +25,15 @@ export default (lastModifiedAt?: string, firstCall = true) => {
     }
     if (firstCall || products.length === 0) {
       firstCall = false;
-      // const productSet = await getProductSet([lastModifiedAt, product?.id]);
+      const productSet = await getProductSet([lastModifiedAt, product?.id]);
       //@todo: uncomment above and remove line below
-      const productSet = await getProductSet([
-        lastModifiedAt,
-        // product?.id || "1b48fb11-daf3-4dff-8692-79d01dd449e1", //one item
-        // product?.id || "0e0efe41-6130-49ff-a3e6-1601df174518", // 3 titems
-        // product?.id || "3c3224b5-35a9-4eff-a424-ed6a36fdd645", // no items
-        product?.id || "564972bc-a1b0-45fc-9243-78edc64d4579", // 38 items
-      ]);
+      // const productSet = await getProductSet([
+      //   lastModifiedAt,
+      //   // product?.id || "1b48fb11-daf3-4dff-8692-79d01dd449e1", //one item
+      //   // product?.id || "0e0efe41-6130-49ff-a3e6-1601df174518", // 3 titems
+      //   // product?.id || "3c3224b5-35a9-4eff-a424-ed6a36fdd645", // no items
+      //   product?.id || "564972bc-a1b0-45fc-9243-78edc64d4579", // 38 items
+      // ]);
       if (productSet.length === 0) {
         done = true;
         if (product) {
@@ -52,8 +51,8 @@ const getProductSet = async ([lastModifiedAt, lastId]: [
   lastModifiedAt?: string,
   lastId?: string
 ]): Promise<Product[]> => {
-  //@note: if you only want published changes you can add 2 items to the where
-  //  array, the lastModifiedAt and "masterData(published=true)"
+  //@note: if you only want published changes you can add 1 items to the where
+  //  array: "masterData(published=true)"
   const where: string[] = lastModifiedAt
     ? [`lastModifiedAt > "${lastModifiedAt}"`]
     : [];
@@ -71,6 +70,5 @@ const getProductSet = async ([lastModifiedAt, lastId]: [
       },
     })
     .execute();
-  console.log("how many:", response.body.total);
   return response.body.results;
 };

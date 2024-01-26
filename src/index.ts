@@ -1,26 +1,25 @@
 import products from "./products/products";
 import active from "./lib/Store";
-import { later } from "./lib/later";
+import expandPrices from "./products/expandPrices";
+import saveToFile from "./target/saveToFile";
+import { limitFileWrite } from "./lib";
 
 const main = async () => {
   const get = products();
   const result = [];
   while (true) {
     active.dispatch(active.getSnapshot() + 1);
-    const item = await get();
-    console.log("item is", item === null, item?.id);
-    if (item === null) {
+    const product = await get();
+    if (product === null) {
       break;
     }
-    result.push(item);
-    //@todo: make a syncTo processor
-    //@todo: rate limit the coco and syncIn api method
-    later().finally(() => {
-      active.dispatch(active.getSnapshot() - 1);
-    });
+    result.push(product);
+    expandPrices(product)
+      .then(limitFileWrite(saveToFile))
+      .finally(() => active.dispatch(active.getSnapshot() - 1));
+    console.log("processed:", result.length);
   }
-  console.log("length:", result.length);
-
+  console.log("total products:", result.length);
   console.log("finished .....");
 };
 main();

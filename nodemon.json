@@ -1,0 +1,6 @@
+{
+  "ignore": [
+    "product-files/*.json",
+    "node_modules/"
+  ]
+}

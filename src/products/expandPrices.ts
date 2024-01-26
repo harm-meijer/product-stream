@@ -44,7 +44,6 @@ async function getPrices(
       },
     })
     .execute();
-  console.log("total:", prices.body.total);
   prices.body.results.forEach((price) => {
     pricesMap.set(price.sku, (pricesMap.get(price.sku) || []).concat(price));
   });

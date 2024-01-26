@@ -40,34 +40,24 @@ function createRateLimit(
           break;
         }
       }
-      // console.log("active in period", activeInPeriod);
       if (activeInPeriod.length >= maxInPeriod) {
-        console.log(
-          "too many active, wait",
-          arg,
-          "wait for:",
-          activeInPeriod[0] + periodInMilliseconds - now
-        );
+        //too many in time period, rate limit activated
         return later(activeInPeriod[0] + periodInMilliseconds - now).then(() =>
           recur(arg)
         );
       }
       if (concurrentlyActive < concurrent) {
-        console.log("starging:", arg);
         start(now);
         const promise = fn(arg);
         promise.finally(() => {
-          console.log("done:", arg);
           done();
         });
         return promise;
       }
       return new Promise((resolve) => {
-        console.log("creating promise, too many concurrent", arg);
+        //too many concurrent, rate limit activated
         store.subscribe(async () => {
-          console.log("subscription triggered:", arg);
           const val = await recur(arg);
-          console.log("resolving:", val);
           resolve(val);
         });
       });
