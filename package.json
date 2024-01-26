@@ -5,6 +5,7 @@
   "scripts": {
     "env": "dotenv-run-script .env --",
     "dev": "nodemon src/index.ts",
+    "try": "nodemon src/products/expandPrices.ts",
     "prod": "npm run build && node dist/src/index.js",
     "build": "tsc",
     "lint": "tsc --noEmit && eslint ."
