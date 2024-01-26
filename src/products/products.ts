@@ -64,7 +64,7 @@ const getProductSet = async ([lastModifiedAt, lastId]: [
     .get({
       queryArgs: {
         sort: "id asc",
-        limit: 200,
+        limit: 500,
         expand: "masterData.current.categories[*].ancestors[*]",
         where,
       },
