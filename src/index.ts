@@ -13,7 +13,6 @@ const main = async () => {
       break;
     }
     result.push(item);
-    //@todo:setting standalone prices
     //@todo: make a syncTo processor
     //@todo: rate limit the coco and syncIn api method
     later().finally(() => {
