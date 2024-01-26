@@ -1,50 +1,27 @@
-import { Transform } from "stream";
-import createProductReadStream from "./lib/productStream";
-import createProductProcessor from "./lib/createProductProcessor";
+import products from "./products/products";
+import active from "./lib/Store";
+import { later } from "./lib/later";
 
 const main = async () => {
-  const errorFilter = new Transform({
-    objectMode: true,
-    transform(chunk, enc, callback) {
-      if (chunk[0] === "FAIL") {
-        callback(null, chunk[1]);
-        return;
-      }
-      callback(null);
-    },
-  });
-  const successFilter = new Transform({
-    objectMode: true,
-    transform(chunk, enc, callback) {
-      if (chunk[0] === "SUCCESS") {
-        callback(null, chunk[1]);
-        return;
-      }
-      callback(null);
-    },
-  });
-  let counter = 0;
-  const processStream = createProductReadStream().pipe(
-    createProductProcessor()
-  );
-  const errorStream = processStream.pipe(errorFilter);
-  const successStream = processStream.pipe(successFilter);
-  processStream.on("data", () => {
-    //can update a progress bar here
-    counter++;
-  });
-  const errors: unknown[] = [];
-  errorStream.on("data", (error) => {
-    errors.push(error);
-  });
-  successStream.on("data", (...args) => {
-    console.log("finished with:", args);
-  });
-  processStream.on("close", () => {
-    if (errors.length) {
-      console.error("errors:", errors.length);
+  const get = products();
+  const result = [];
+  while (true) {
+    active.dispatch(active.getSnapshot() + 1);
+    const item = await get();
+    console.log("item is", item === null, item?.id);
+    if (item === null) {
+      break;
     }
-    console.log("stream closed", counter);
-  });
+    result.push(item);
+    //@todo:setting standalone prices
+    //@todo: make a syncTo processor
+    //@todo: rate limit the coco and syncIn api method
+    later().finally(() => {
+      active.dispatch(active.getSnapshot() - 1);
+    });
+  }
+  console.log("length:", result.length);
+
+  console.log("finished .....");
 };
 main();
