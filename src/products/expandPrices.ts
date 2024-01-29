@@ -9,14 +9,14 @@ async function expandPrices(product: Product) {
     product.masterData.current.masterVariant,
     ...product.masterData.current.variants,
   ];
-  const prices = await getPrices(
+  const standAlonePrices = await getPrices(
     variants.map(({ sku }) => sku).filter((sku) => Boolean(sku)) as string[]
   );
   variants.forEach((variant) => {
-    const price = prices.get(variant?.sku as string);
-    if (price) {
+    const standalonePricesForSKU = standAlonePrices.get(variant?.sku as string);
+    if (standalonePricesForSKU) {
       //@ts-ignore (cannot mutate)
-      variant.prices = (variant.prices || []).concat(price);
+      variant.prices = (variant.prices || []).concat(standalonePricesForSKU);
     }
   });
   return product;
