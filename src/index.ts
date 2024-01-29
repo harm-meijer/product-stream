@@ -1,8 +1,9 @@
 import products from "./products/products";
 import active from "./lib/Store";
 import expandPrices from "./products/expandPrices";
-import saveToFile from "./target/saveToFile";
-import { limitFileWrite } from "./lib";
+import setPriceMode from "./products/setPriceMode";
+import createStandAlonePrices from "./products/createStandAlonePrices";
+import removeInDocumentPrices from "./products/removeInDocumentPrices";
 
 const main = async () => {
   const get = products();
@@ -14,8 +15,9 @@ const main = async () => {
       break;
     }
     result.push(product);
-    expandPrices(product)
-      .then(limitFileWrite(saveToFile))
+    setPriceMode(product)
+      .then(createStandAlonePrices)
+      .then(removeInDocumentPrices)
       .finally(() => active.dispatch(active.getSnapshot() - 1));
     console.log("processed:", result.length);
   }
